@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Typography: History Mini-Games</title>
+<style>
+  :root{--bg:#0f172a;--card:#ffffff;--muted:#64748b;--accent:#7c3aed}
+  body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial;background:linear-gradient(180deg,#e6eefc 0%, #f8fafc 60%);color:#0f172a;display:flex;align-items:flex-start;justify-content:center;padding:28px}
+  .wrap{max-width:980px;width:100%}
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+  h1{font-size:20px;margin:0}
+  .score{font-family:monospace;background:#eef2ff;padding:6px 10px;border-radius:8px}
+  .card{background:white;padding:18px;border-radius:12px;box-shadow:0 6px 20px rgba(12,24,40,0.08);margin-bottom:14px}
+  .modes{display:flex;gap:8px;flex-wrap:wrap}
+  .btn{padding:8px 12px;border-radius:10px;border:1px solid #e6e6e6;background:white;cursor:pointer}
+  .btn.primary{background:var(--accent);color:white;border:0}
+  .flex{display:flex;gap:12px;align-items:center}
+  /* Timeline game */
+  .timeline{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:12px}
+  .era{padding:10px;border-radius:8px;background:#f1f5f9;border:1px dashed #cbd5e1;cursor:grab}
+  .dropzone{flex:1;height:56px;border-radius:10px;border:2px dashed #e2e8f0;display:flex;align-items:center;justify-content:center;background:#fbfdff}
+  .zones{display:flex;gap:10px;margin-top:12px}
+  /* Typeface matching */
+  .fonts{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:12px}
+  .fontCard{padding:12px;border-radius:10px;border:1px solid #e6e6e6;text-align:center;cursor:pointer}
+  .fontSample{font-size:22px;margin:8px 0}
+  /* Kerning */
+  .sample{font-size:36px;font-weight:600;margin:12px 0;transition:all 160ms}
+  .controls{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
+  footer{font-size:13px;color:var(--muted);margin-top:8px;text-align:center}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Typography — Mini Games (inspired by "History of Typography")</h1>
+    <div class="score">Points: <span id="points">0</span></div>
+  </header>
+
+  <div class="card">
+    <div class="modes">
+      <button class="btn primary" id="modeTimeline">Timeline Order</button>
+      <button class="btn" id="modeMatch">Typeface Match</button>
+      <button class="btn" id="modeKerning">Kerning Eye</button>
+      <button class="btn" id="resetBtn">Reset Score</button>
+    </div>
+    <p style="margin-top:8px;color:#475569">Three quick mini-games: place eras in chronological order, match fonts to eras, and train your kerning eye.</p>
+  </div>
+
+  <!-- Timeline Game -->
+  <section class="card" id="timelineCard">
+    <h2 style="margin:0 0 8px 0">1) Timeline — Drag eras into chronological order</h2>
+    <div style="color:#475569;font-size:13px">Drag the era chips into the timeline from left (oldest) to right (newest).</div>
+    <div class="zones" id="zones"></div>
+    <div style="margin-top:12px;display:flex;gap:8px">
+      <button class="btn primary" id="checkTimeline">Check Order</button>
+      <button class="btn" id="shuffleTimeline">Shuffle</button>
+      <div style="margin-left:auto;color:#475569;font-size:13px">Tip: think historical printing -> modern digital</div>
+    </div>
+    <div id="timelineFeedback" style="margin-top:10px;font-weight:600"></div>
+  </section>
+
+  <!-- Typeface Match -->
+  <section class="card hidden" id="matchCard">
+    <h2 style="margin:0 0 8px 0">2) Typeface Match — Which era?</h2>
+    <div style="color:#475569;font-size:13px">Pick the font that best represents the era shown.</div>
+    <div id="eraPrompt" style="margin-top:12px;font-weight:600"></div>
+    <div class="fonts" id="fonts"></div>
+    <div style="margin-top:12px;display:flex;gap:8px">
+      <button class="btn primary" id="nextMatch">Next</button>
+      <button class="btn" id="startMatch">Start</button>
+      <div id="matchFeedback" style="margin-left:auto;font-weight:600"></div>
+    </div>
+  </section>
+
+  <!-- Kerning Eye -->
+  <section class="card hidden" id="kerningCard">
+    <h2 style="margin:0 0 8px 0">3) Kerning Eye — Match by eye</h2>
+    <div style="color:#475569;font-size:13px">A target sample appears. Adjust spacing to match it visually and submit.</div>
+    <div style="margin-top:12px">
+      <div style="color:#475569;font-size:13px">Target (do not use numeric hint):</div>
+      <div id="targetSample" class="sample" style="letter-spacing:0px;font-family:Georgia,serif">Typography matters: match the spacing.</div>
+
+      <div style="color:#475569;font-size:13px;margin-top:8px">Your sample:</div>
+      <div id="playerSample" class="sample" style="letter-spacing:6px;font-family:Arial,Helvetica,sans-serif">Typography matters: match the spacing.</div>
+
+      <div class="controls">
+        <label class="small">Letter spacing</label>
+        <input id="kerningSlider" type="range" min="-6" max="36" step="1" value="6"/>
+        <div class="score meter" id="kerningVal">6px</div>
+        <button class="btn primary" id="kerningSubmit">Submit</button>
+        <button class="btn" id="kerningNew">New Target</button>
+        <div style="margin-left:auto" id="kerningFeedback" style="font-weight:600"></div>
+      </div>
+    </div>
+  </section>
+
+  <footer>Built quickly — historically informed but simplified. For a deep dive, watch the Domestika video.</footer>
+</div>
+
+<script>
+// Game data inspired by the "History of Typography" video
+const eras = [
+  { id: 'Gutenberg', label: 'Movable type — 15th C (Gutenberg)'},
+  { id: 'Blackletter', label: 'Blackletter / Gothic — Medieval'},
+  { id: 'Renaissance', label: 'Renaissance Antiqua — 16th C (Venetian)'},
+  { id: 'Transitional', label: 'Transitional & Modern serifs — 18th C'},
+  { id: 'Script', label: 'Script & Calligraphic Display — 19th C'},
+  { id: 'Typewriter', label: 'Monospaced / Typewriter — 19th–20th C'},
+  { id: 'Grotesque', label: 'Grotesque Sans — Early 20th C'},
+  { id: 'HumanistSans', label: 'Humanist / Neo-grotesque — Mid 20th C'},
+  { id: 'Geometric', label: 'Geometric Sans & Digital — Late 20th–21st C'}
+];
+
+let points = 0;
+const pointsEl = document.getElementById('points');
+function addPoints(n){ points += n; pointsEl.textContent = points; }
+
+// ----------------- Timeline game -----------------
+const zonesEl = document.getElementById('zones');
+const timelineFeedback = document.getElementById('timelineFeedback');
+
+function createTimelineZones(){
+  zonesEl.innerHTML = '';
+  for(let i=0;i<eras.length;i++){
+    const dz = document.createElement('div');
+    dz.className = 'dropzone';
+    dz.dataset.pos = i;
+    dz.ondragover = (e)=>{ e.preventDefault(); dz.style.borderColor='#7c3aed' }
+    dz.ondragleave = ()=>{ dz.style.borderColor='#e2e8f0' }
+    dz.ondrop = (e)=>{
+      e.preventDefault();
+      const id = e.dataTransfer.getData('text/plain');
+      const chip = document.getElementById(id);
+      if(chip) dz.innerHTML = '';
+      dz.appendChild(chip);
+      chip.style.cursor='default';
+      dz.style.borderColor='#e2e8f0';
+    };
+    zonesEl.appendChild(dz);
+  }
+}
+
+function createEraChips(){
+  const container = document.createElement('div');
+  container.style.display='flex';
+  container.style.flexWrap='wrap';
+  container.style.gap='8px';
+  container.style.marginTop='12px';
+  const list = eras.slice(); shuffleArray(list);
+  list.forEach(e=>{
+    const chip = document.createElement('div');
+    chip.className = 'era';
+    chip.id = 'chip-'+e.id;
+    chip.draggable = true;
+    chip.textContent = e.label;
+    chip.ondragstart = (ev)=>{ ev.dataTransfer.setData('text/plain', chip.id) };
+    container.appendChild(chip);
+  });
+  timelineFeedback.innerHTML = '';
+  zonesEl.parentNode.insertBefore(container, zonesEl.nextSibling);
+}
+
+// shuffle helper
+function shuffleArray(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]] } return a; }
+
+function setupTimeline(){
+  // remove any old chip area if present
+  const existing = zonesEl.parentNode.querySelector('div[style*="flex-wrap"]');
+  if(existing) existing.remove();
+  createTimelineZones();
+  createEraChips();
+}
+
+document.getElementById('shuffleTimeline').addEventListener('click', ()=> setupTimeline());
+document.getElementById('checkTimeline').addEventListener('click', ()=>{
+  // read zones left->right, compare to correct chronological order of eras array
+  const placed = Array.from(zonesEl.children).map((dz)=>{
+    const chip = dz.querySelector('.era');
+    return chip ? chip.textContent : null;
+  });
+  // Build correct labels in order (eras array is chronological)
+  const correct = eras.map(e=>e.label);
+  let scoreThis = 0;
+  let wrongCount = 0;
+  for(let i=0;i<correct.length;i++){
+    if(placed[i] === correct[i]) { scoreThis += 10; }
+    else wrongCount++;
+  }
+  if(scoreThis === correct.length*10){
+    timelineFeedback.style.color='green';
+    timelineFeedback.textContent = `Perfect — full order matched! (+${scoreThis} pts)`;
+    addPoints(scoreThis);
+  } else {
+    timelineFeedback.style.color='crimson';
+    timelineFeedback.textContent = `You got ${correct.length - wrongCount}/${correct.length} correct positions. (+${scoreThis} pts). Try swapping the wrong chips.`;
+    addPoints(scoreThis);
+  }
+});
+
+// ----------------- Typeface Match game -----------------
+const fontsEl = document.getElementById('fonts');
+const eraPrompt = document.getElementById('eraPrompt');
+const matchFeedback = document.getElementById('matchFeedback');
+let matchIndex = 0;
+const matchPool = [
+  { era: 'Gutenberg', sample: 'Old-style serif (Venetian) — classic book text', css:'font-family: "Times New Roman", Georgia, serif;' , correct:'Times New Roman' },
+  { era: 'Blackletter', sample: 'Blackletter / Gothic feel', css:'font-family: "Times New Roman", Georgia, serif; font-variant:small-caps; letter-spacing:0.5px;', correct:'Times New Roman' },
+  { era: 'Typewriter', sample: 'Monospaced typewriter', css:'font-family: "Courier New", monospace;', correct:'Courier New' },
+  { era: 'Grotesque', sample: 'Grotesque sans — early sans', css:'font-family: "Impact", "Arial Black", sans-serif;', correct:'Impact' },
+  { era: 'Geometric', sample: 'Geometric modern sans', css:'font-family: "Arial", Helvetica, sans-serif;', correct:'Arial' }
+];
+
+function startMatch(){
+  matchIndex = 0;
+  addFontsUI();
+  nextMatch();
+  matchFeedback.textContent='';
+}
+
+function addFontsUI(){
+  fontsEl.innerHTML='';
+  const options = ['Times New Roman','Georgia','Courier New','Impact','Arial','Verdana'];
+  options.forEach(opt=>{
+    const card = document.createElement('div');
+    card.className='fontCard';
+    card.textContent = opt;
+    const sample = document.createElement('div');
+    sample.className='fontSample';
+    sample.style.cssText = (opt==='Courier New' ? 'font-family: Courier New, monospace' : (opt==='Impact' ? 'font-family: Impact, Arial Black, sans-serif' : (opt==='Times New Roman' ? 'font-family: Times New Roman, serif' : (opt==='Georgia' ? 'font-family: Georgia, serif' : 'font-family: Arial, Helvetica, sans-serif'))));
+    sample.innerText = 'Aa Bb Cc — sample';
+    card.prepend(sample);
+    card.onclick = ()=> evaluateFont(opt);
+    fontsEl.appendChild(card);
+  });
+}
+
+function nextMatch(){
+  if(matchIndex >= matchPool.length){ matchFeedback.style.color='green'; matchFeedback.textContent='Done — well played! Click Start to retry.'; return; }
+  const cur = matchPool[matchIndex];
+  eraPrompt.innerHTML = `<strong>Era:</strong> ${cur.era} — pick the best representative font`;
+  // show decorative sample (not strictly necessary)
+}
+
+function evaluateFont(choice){
+  const cur = matchPool[matchIndex];
+  if(!cur){ matchFeedback.textContent='Click Start first.'; return; }
+  if(choice === cur.correct){
+    matchFeedback.style.color='green';
+    matchFeedback.textContent = `Correct! +20 pts`;
+    addPoints(20);
+  } else {
+    matchFeedback.style.color='crimson';
+    matchFeedback.textContent = `Not quite — expected ${cur.correct}.`;
+  }
+  matchIndex++;
+  setTimeout(()=>{ nextMatch(); }, 700);
+}
+
+document.getElementById('startMatch').addEventListener('click', ()=>{ startMatch(); });
+document.getElementById('nextMatch').addEventListener('click', ()=>{ matchIndex++; nextMatch(); });
+
+// ----------------- Kerning Eye -----------------
+const targetSample = document.getElementById('targetSample');
+const playerSample = document.getElementById('playerSample');
+const kerningSlider = document.getElementById('kerningSlider');
+const kerningVal = document.getElementById('kerningVal');
+const kerningFeedback = document.getElementById('kerningFeedback');
+let kerningTarget = 6;
+
+function setKerningTarget(){
+  kerningTarget = Math.round(-4 + Math.random()*40);
+  targetSample.style.letterSpacing = kerningTarget + 'px';
+  // Optionally vary font to train eye\n
+  const fonts = ['Georgia,serif','Times New Roman,serif','Arial,Helvetica,sans-serif','Impact,Arial Black,sans-serif'];
+  targetSample.style.fontFamily = fonts[Math.floor(Math.random()*fonts.length)];
+  kerningFeedback.textContent='';
+}
+
+kerningSlider.addEventListener('input', ()=>{
+  playerSample.style.letterSpacing = kerningSlider.value + 'px';
+  kerningVal.textContent = kerningSlider.value + 'px';
+});
+
+document.getElementById('kerningNew').addEventListener('click', ()=>{ setKerningTarget(); });
+
+document.getElementById('kerningSubmit').addEventListener('click', ()=>{
+  const your = Number(kerningSlider.value);
+  const err = Math.abs(your - kerningTarget);
+  const pts = Math.max(0, Math.round((30 - err) * 2));
+  addPoints(pts);
+  if(err <= 1){ kerningFeedback.style.color='green'; kerningFeedback.textContent = `Perfect — +${pts} pts`; }
+  else if(err <=4){ kerningFeedback.style.color='#b45309'; kerningFeedback.textContent=`Close — +${pts} pts`; }
+  else { kerningFeedback.style.color='crimson'; kerningFeedback.textContent=`Off — +${pts} pts`; }
+  // new target automatically
+  setTimeout(setKerningTarget,400);
+});
+
+// ----------------- Mode switching -----------------
+const timelineCard = document.getElementById('timelineCard');
+const matchCard = document.getElementById('matchCard');
+const kerningCard = document.getElementById('kerningCard');
+
+document.getElementById('modeTimeline').addEventListener('click', ()=>{ timelineCard.classList.remove('hidden'); matchCard.classList.add('hidden'); kerningCard.classList.add('hidden'); });
+document.getElementById('modeMatch').addEventListener('click', ()=>{ timelineCard.classList.add('hidden'); matchCard.classList.remove('hidden'); kerningCard.classList.add('hidden'); });
+document.getElementById('modeKerning').addEventListener('click', ()=>{ timelineCard.classList.add('hidden'); matchCard.classList.add('hidden'); kerningCard.classList.remove('hidden'); });
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{ points=0; pointsEl.textContent=points; });
+
+// init
+setupTimeline();
+setKerningTarget();
+</script>
+</body>
+</html>
